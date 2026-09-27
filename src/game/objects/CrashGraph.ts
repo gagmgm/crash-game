@@ -112,7 +112,13 @@ export class CrashGraph extends Container {
     const g = this.grid.clear();
     const yStep = niceStep(range.maxMultiplier - 1, this.options.maxYTicks);
     let yi = 0;
-    for (let v = 1; v <= range.maxMultiplier + 1e-9 && yi < MAX_LABELS; v += yStep) {
+    // Baseline at 1x, then clean multiples of the step (1.2, 1.4… or 10, 20…), never 11x/21x.
+    const firstMultiple = (Math.floor(1 / yStep + 1e-9) + 1) * yStep;
+    for (
+      let v = 1;
+      v <= range.maxMultiplier + 1e-9 && yi < MAX_LABELS;
+      v = v === 1 ? firstMultiple : v + yStep
+    ) {
       const y = projectY(v, range, r);
       g.moveTo(r.x, y).lineTo(r.x + r.width, y);
       const label = this.yLabels[yi++] as BitmapText;

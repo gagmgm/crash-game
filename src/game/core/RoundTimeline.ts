@@ -74,10 +74,15 @@ export class RoundTimeline implements RoundTimelineReader {
     return this.roundId;
   }
 
-  /** Allowed prediction lead grows with measured latency so high-latency play stays smooth. */
-  setLatency(rttMs: number | null): void {
-    const oneWay = rttMs === null ? 0 : rttMs / 2;
-    this.maxLeadMs = Math.max(this.options.minTickLeadMs, oneWay + this.options.tickLeadMarginMs);
+  /**
+   * Allowed prediction lead grows with the measured server->client delay, so high-latency
+   * play stays smooth instead of constantly waiting for ticks that are known to be late.
+   */
+  setOneWayDelay(delayMs: number): void {
+    this.maxLeadMs = Math.max(
+      this.options.minTickLeadMs,
+      Math.max(0, delayMs) + this.options.tickLeadMarginMs,
+    );
   }
 
   reset(): void {

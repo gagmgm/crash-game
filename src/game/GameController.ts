@@ -96,6 +96,7 @@ export class GameController {
   private cashoutTimer: TimerHandle | null = null;
   private pingTimer: TimerHandle | null = null;
   private readonly pendingPings = new Map<string, number>();
+  private delayEstimateMs: number | null = null;
   private readonly uiSample = createTimelineSample();
 
   constructor(deps: GameControllerDeps) {
@@ -433,6 +434,7 @@ export class GameController {
     const game = this.stores.game.getState();
     if (message.roundId !== game.roundId || game.roundState !== RoundState.RUNNING) return;
     this.timeline.applyTick(message.elapsedMs, message.multiplier);
+    this.observeDelay(this.clock.serverNow() - message.serverTimestamp);
     if (message.multiplier !== game.serverMultiplier) {
       this.stores.game.setState({ serverMultiplier: message.multiplier });
     }
@@ -523,8 +525,9 @@ export class GameController {
     if (sentAt === undefined) return;
     this.pendingPings.delete(message.requestId);
     this.clock.addPingSample(sentAt, message.serverTimestamp, this.clock.localTime());
-    this.timeline.setLatency(this.clock.rttMs);
-    this.stores.game.setState({ rttMs: this.clock.rttMs });
+    const rtt = this.clock.rttMs;
+    if (rtt !== null) this.observeDelay(rtt / 2);
+    this.stores.game.setState({ rttMs: rtt });
   }
 
   // ---------------------------------------------------------------- helpers
@@ -537,6 +540,18 @@ export class GameController {
     if (next === before) return false;
     this.stores.bet.setState(next);
     return true;
+  }
+
+  /**
+   * Tracks server->client delay (from tick age and ping RTT). Rises immediately when the
+   * network gets slower and decays slowly, so the prediction lead adapts without flapping.
+   */
+  private observeDelay(delayMs: number): void {
+    const delay = Math.max(0, delayMs);
+    const current = this.delayEstimateMs;
+    this.delayEstimateMs =
+      current === null || delay > current ? delay : current + (delay - current) * 0.05;
+    this.timeline.setOneWayDelay(this.delayEstimateMs);
   }
 
   private isStaleRound(roundId: string, serverTimestamp: number): boolean {

@@ -40,10 +40,14 @@ export class GameClock {
     return this.samples.length > 0 || this.roughOffset !== null;
   }
 
-  /** Best round-trip time seen recently, or null before the first PONG. */
+  /**
+   * Current round-trip time (mean of the latest samples), or null before the first PONG.
+   * Unlike the offset, this must track changing network conditions.
+   */
   get rttMs(): number | null {
-    if (this.samples.length === 0) return null;
-    return Math.min(...this.samples.map((s) => s.rtt));
+    const recent = this.samples.slice(-3);
+    if (recent.length === 0) return null;
+    return recent.reduce((sum, s) => sum + s.rtt, 0) / recent.length;
   }
 
   /** Target offset: the lowest-RTT ping sample is the most accurate. */

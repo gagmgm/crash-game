@@ -19,7 +19,7 @@ const config = {
     /** Pending bet/cash-out without a response after this long triggers a snapshot resync. */
     requestTimeoutMs: 6_000,
     snapshotTimeoutMs: 6_000,
-    pingIntervalMs: 10_000,
+    pingIntervalMs: 5_000,
     initialPingCount: 3,
     reconnect: {
       baseDelayMs: 500,

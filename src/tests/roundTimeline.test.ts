@@ -29,7 +29,7 @@ describe('RoundTimeline', () => {
 
   it('allows more lead on high-latency links', () => {
     const t = new RoundTimeline(opts);
-    t.setLatency(2_000);
+    t.setOneWayDelay(1_000);
     t.setRunning('round-1', 0, RATE, 0);
     t.applyTick(2_000, multiplierAt(2_000, RATE));
     expect(t.sample(60_000).elapsedMs).toBe(3_300);
