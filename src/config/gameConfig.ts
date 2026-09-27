@@ -4,7 +4,7 @@ import type { MinorUnits } from '../utils/money';
  * Client configuration. Round durations and bet limits here are only *defaults* used
  * by the mock server and before the first snapshot; a real backend dictates them.
  */
-export const gameConfig = {
+const config = {
   currency: 'USD',
   historyLength: 20,
 
@@ -98,6 +98,11 @@ export const gameConfig = {
     maxDevicePixelRatio: 2,
     backgroundColor: 0x0b0f1a,
   },
-} as const;
+};
 
-export type GameConfig = typeof gameConfig;
+type DeepReadonly<T> = {
+  readonly [K in keyof T]: T[K] extends object ? DeepReadonly<T[K]> : T[K];
+};
+
+export type GameConfig = DeepReadonly<typeof config>;
+export const gameConfig: GameConfig = config;
