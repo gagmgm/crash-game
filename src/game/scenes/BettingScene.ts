@@ -11,6 +11,7 @@ export class BettingScene extends BaseScene {
   private readonly track = new Sprite(Texture.WHITE);
   private readonly bar = new Sprite(Texture.WHITE);
   private barWidth = 200;
+  private readonly spot = { x: 0, y: 0 };
 
   constructor(...args: ConstructorParameters<typeof BaseScene>) {
     super(...args);
@@ -73,11 +74,10 @@ export class BettingScene extends BaseScene {
     }
   }
 
-  private parkingSpot(): { x: number; y: number } {
+  private parkingSpot(): Readonly<{ x: number; y: number }> {
     const { graphRect, aircraftScale } = this.world.layout;
-    return {
-      x: graphRect.x + 34 * aircraftScale,
-      y: graphRect.y + graphRect.height - 26 * aircraftScale,
-    };
+    this.spot.x = graphRect.x + 34 * aircraftScale;
+    this.spot.y = graphRect.y + graphRect.height - 26 * aircraftScale;
+    return this.spot;
   }
 }

@@ -61,8 +61,10 @@ export class AudioManager implements GameAudio {
 
   detach(): void {
     this.attached = false;
-    window.removeEventListener('pointerdown', this.unlock);
-    window.removeEventListener('keydown', this.unlock);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('pointerdown', this.unlock);
+      window.removeEventListener('keydown', this.unlock);
+    }
     this.stopFlightLoop();
     void this.context?.close().catch(() => {});
     this.context = null;

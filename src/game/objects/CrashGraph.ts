@@ -36,9 +36,12 @@ export class CrashGraph extends Container {
   private rect: Rect = { x: 0, y: 0, width: 1, height: 1 };
   private mode: GraphMode = 'idle';
   private marker: { timeMs: number; multiplier: number } | null = null;
-  // Cache keys to skip redundant redraws.
-  private gridKey = '';
-  private curveKey = '';
+  // Last-drawn inputs, compared numerically to skip redundant redraws without allocating.
+  private gridDirty = true;
+  private curveDirty = true;
+  private lastRangeTime = -1;
+  private lastRangeMult = -1;
+  private lastElapsed = -1;
   private readonly tip = { x: 0, y: 0 };
   private readonly prev = { x: 0, y: 0 };
 
@@ -66,20 +69,20 @@ export class CrashGraph extends Container {
     this.rect = { ...layout.graphRect };
     const scale = layout.labelFontSize / 12;
     for (const label of [...this.yLabels, ...this.xLabels]) label.scale.set(scale);
-    this.gridKey = '';
-    this.curveKey = '';
+    this.gridDirty = true;
+    this.curveDirty = true;
   }
 
   setMode(mode: GraphMode): void {
     if (this.mode === mode) return;
     this.mode = mode;
-    this.curveKey = '';
+    this.curveDirty = true;
   }
 
   setMarker(timeMs: number, multiplier: number): void {
     this.marker = { timeMs, multiplier };
     this.markerLabel.text = `${multiplier.toFixed(2)}x`;
-    this.curveKey = '';
+    this.curveDirty = true;
   }
 
   clearMarker(): void {
@@ -99,16 +102,25 @@ export class CrashGraph extends Container {
   }
 
   draw(range: GraphRange, elapsedMs: number, growthRate: number): void {
-    this.drawGrid(range);
-    this.drawCurve(range, elapsedMs, growthRate);
+    if (range.maxTimeMs !== this.lastRangeTime || range.maxMultiplier !== this.lastRangeMult) {
+      this.lastRangeTime = range.maxTimeMs;
+      this.lastRangeMult = range.maxMultiplier;
+      this.gridDirty = true;
+    }
+    if (this.gridDirty) {
+      this.gridDirty = false;
+      this.curveDirty = true;
+      this.drawGrid(range);
+    }
+    if (this.curveDirty || elapsedMs !== this.lastElapsed) {
+      this.curveDirty = false;
+      this.lastElapsed = elapsedMs;
+      this.drawCurve(range, elapsedMs, growthRate);
+    }
   }
 
   private drawGrid(range: GraphRange): void {
     const r = this.rect;
-    const key = `${r.x}|${r.y}|${r.width}|${r.height}|${range.maxTimeMs.toFixed(0)}|${range.maxMultiplier.toFixed(3)}`;
-    if (key === this.gridKey) return;
-    this.gridKey = key;
-
     const g = this.grid.clear();
     const yStep = niceStep(range.maxMultiplier - 1, this.options.maxYTicks);
     let yi = 0;
@@ -151,10 +163,6 @@ export class CrashGraph extends Container {
 
   private drawCurve(range: GraphRange, elapsedMs: number, growthRate: number): void {
     const r = this.rect;
-    const key = `${this.gridKey}|${elapsedMs.toFixed(1)}|${this.mode}|${this.marker?.timeMs ?? -1}`;
-    if (key === this.curveKey) return;
-    this.curveKey = key;
-
     const originX = projectX(0, range, r);
     const originY = projectY(1, range, r);
     const curve = this.curve.clear();
