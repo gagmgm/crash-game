@@ -1,0 +1,56 @@
+.history {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(to right, #000 85%, transparent);
+  padding: 2px 0;
+}
+
+.history::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.low {
+  color: #f87171;
+}
+
+.mid {
+  color: var(--accent);
+}
+
+.high {
+  color: #c084fc;
+}
+
+.huge {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.fresh {
+  animation: pop 400ms ease-out;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
